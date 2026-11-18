@@ -2,7 +2,7 @@
  *
  * 一個主題:GL.topic({ id, no, name, groups: [ { id, name, tip, items: [ item… ] } ] })
  * 一個 item:GL.item(id, [ 步驟… ])
- * 一個步驟:GL.st('步驟名稱', '方塊寫法', '講解', ['也可以這樣說…'])
+ * 一個步驟:GL.st('步驟名稱', '方塊寫法', '講解', ['也可以這樣說…'], '整句中文翻譯(選填,開「中文」開關才顯示)')
  *
  * 方塊寫法:用 " | " 分開每個方塊,每個方塊 = 角色:文字
  *   S 主詞  V 動詞  O 受詞  C 補語  M 修飾語  X 助動詞  N 否定  J 連接詞  Q 疑問詞
@@ -46,12 +46,12 @@
     });
   }
 
-  function st(label, spec, note, also) {
+  function st(label, spec, note, also, tr) {
     var end = '.';
     spec = spec.trim();
     var last = spec.charAt(spec.length - 1);
     if ((last === '?' || last === '!') && spec.charAt(spec.length - 2) === ' ') { end = last; spec = spec.slice(0, -2); }
-    return { label: label, nodes: parseNodes(spec), end: end, note: note || '', also: also || [] };
+    return { label: label, nodes: parseNodes(spec), end: end, note: note || '', also: also || [], tr: tr || '' };
   }
 
   window.GL_TOPICS = window.GL_TOPICS || [];

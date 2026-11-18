@@ -15,7 +15,7 @@
   TOPICS.sort(function (a, b) { return a.no - b.no; });
 
   var st = {
-    mode: 'compose', topic: 0, cur: 0, labels: true, colors: true, font: 1,
+    mode: 'compose', topic: 0, cur: 0, labels: true, colors: true, font: 1, zh: false,
     A: [], B: [], rows: [], endA: '.', step: 0, fstep: 0, popRow: -1,
     hl: false, moved: false, flash: null, targets: null, sideView: 'items'
   };
@@ -41,7 +41,7 @@
     try {
       localStorage.setItem('gl_state', JSON.stringify({
         mode: st.mode, topic: TOPICS[st.topic].id, item: curItem().id,
-        labels: st.labels, colors: st.colors, font: st.font
+        labels: st.labels, colors: st.colors, font: st.font, zh: st.zh
       }));
     } catch (e) {}
   }
@@ -53,6 +53,7 @@
       if (o.mode === 'compose' || o.mode === 'free') st.mode = o.mode;
       if (typeof o.labels === 'boolean') st.labels = o.labels;
       if (typeof o.colors === 'boolean') st.colors = o.colors;
+      if (typeof o.zh === 'boolean') st.zh = o.zh;
       if (typeof o.font === 'number' && o.font >= 0.7 && o.font <= 1.8) st.font = o.font;
       TOPICS.forEach(function (t, i) { if (t.id === o.topic) st.topic = i; });
       buildFlat();
@@ -381,6 +382,7 @@
     document.documentElement.style.setProperty('--zoom', st.font);
     $('tLabel').classList.toggle('on', st.labels);
     $('tColor').classList.toggle('on', st.colors);
+    $('tZh').classList.toggle('on', st.zh);
     Array.prototype.forEach.call(document.querySelectorAll('#modeTabs .tab'), function (b) {
       b.classList.toggle('on', b.dataset.mode === st.mode);
       if (b.dataset.mode === 'compose') b.textContent = rel ? '兩句合一句' : '步驟示範';
@@ -433,6 +435,7 @@
     var sp = s.steps[at];
     if (!free) {
       msg.appendChild(h('span', 'big', gText(sp.nodes, sp.end)));
+      if (st.zh && sp.tr) msg.appendChild(h('span', 'zh', sp.tr));
       msg.appendChild(h('span', 'note', sp.note));
       addAlso(msg, sp.also);
       return;
@@ -440,6 +443,7 @@
     if (arrangementOk()) {
       msg.classList.add('ok');
       msg.appendChild(h('span', 'big', (st.moved ? '✓ 排對了!' : '正確語序') + ' ' + gText(st.A, st.endA)));
+      if (st.zh && sp.tr) msg.appendChild(h('span', 'zh', sp.tr));
       msg.appendChild(h('span', 'note', sp.note));
       addAlso(msg, sp.also);
     } else {
@@ -462,6 +466,7 @@
         msg.classList.add('ok');
         var big = h('span', 'big', (st.moved ? '✓ 排對了!' : '正確語序') + ' ' + sentenceText(st.A));
         msg.appendChild(big);
+        if (st.zh && s.tr) msg.appendChild(h('span', 'zh', s.tr));
         msg.appendChild(h('span', 'note', s.note));
         addAlso(msg, variants(s));
       } else {
@@ -499,6 +504,7 @@
     if (success) {
       msg.classList.add('ok');
       msg.appendChild(h('span', 'big', '✓ ' + sentenceText(st.A)));
+      if (st.zh && s.tr) msg.appendChild(h('span', 'zh', s.tr));
       msg.appendChild(h('span', 'note', s.note));
       addAlso(msg, variants(s));
     } else if (merged && !replaced) {
@@ -610,7 +616,6 @@
 
   /* ---------- 拖曳 ---------- */
   var drag = null;
-  var insEl = $('ins');
 
   function subtreeOwners(node) {
     var s = {};
@@ -647,23 +652,36 @@
     }
     return { i: kids.length, kids: kids };
   }
-  function showIns(row, pos) {
-    var kids = pos.kids, r;
-    if (kids.length === 0) {
-      var rb = row.getBoundingClientRect();
-      insEl.style.left = (rb.left + 10) + 'px'; insEl.style.top = (rb.top + 8) + 'px'; insEl.style.height = Math.max(30, rb.height - 16) + 'px';
-    } else if (pos.i < kids.length) {
-      r = kids[pos.i].getBoundingClientRect();
-      insEl.style.left = (r.left - 8) + 'px'; insEl.style.top = r.top + 'px'; insEl.style.height = r.height + 'px';
-    } else {
-      r = kids[kids.length - 1].getBoundingClientRect();
-      insEl.style.left = (r.right + 4) + 'px'; insEl.style.top = r.top + 'px'; insEl.style.height = r.height + 'px';
+  // 擠壓效果:在插入點放一個真正的 flex 子元素,寬度從 0 展開,
+  // 把旁邊的方塊自然推開讓出空間,看起來像被拖曳的方塊把縫隙「擠」開。
+  function clearGap(immediate) {
+    var el = drag && drag.gapEl;
+    if (!el) return;
+    drag.gapEl = null;
+    if (immediate) { if (el.parentNode) el.parentNode.removeChild(el); return; }
+    el.style.width = '0px';
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 160);
+  }
+  function showGap(row, pos) {
+    var kids = pos.kids;
+    var ref = pos.i < kids.length ? kids[pos.i] : null;
+    var el = drag.gapEl;
+    // 同一個縫隙位置就不動它,避免每次 pointermove 都重開一次動畫
+    if (el && el.parentNode === row && el.nextSibling === ref) return;
+    var fresh = !el;
+    if (!el) { el = document.createElement('div'); el.className = 'ins-gap'; }
+    else if (el.parentNode) el.parentNode.removeChild(el);
+    row.insertBefore(el, ref);
+    drag.gapEl = el;
+    var w = Math.max(20, Math.min(drag.width || 60, 160)) + 'px';
+    if (fresh) {
+      el.style.width = '0px';
+      void el.offsetWidth; // 強制 reflow,讓接下來的寬度變化真的跑 transition
     }
-    insEl.style.display = 'block';
+    el.style.width = w;
   }
   function clearHot() {
     Array.prototype.forEach.call(document.querySelectorAll('.drop-hot'), function (e) { e.classList.remove('drop-hot'); });
-    insEl.style.display = 'none';
   }
   function startDrag(e) {
     var el = drag.el, r = el.getBoundingClientRect();
@@ -675,25 +693,27 @@
     document.body.appendChild(clone);
     drag.clone = clone;
     drag.off = { x: e.clientX - r.left, y: e.clientY - r.top };
+    drag.width = r.width;
     drag.ban = subtreeOwners(drag.node);
     drag.started = true;
     el.classList.add('dragging');
   }
   function moveDrag(e) {
     drag.clone.style.transform = 'translate(' + (e.clientX - drag.off.x) + 'px,' + (e.clientY - drag.off.y) + 'px)';
-    clearHot();
     var row = findTarget(e.clientX, e.clientY);
+    if (row !== drag.row) clearHot();
     drag.row = row;
-    if (!row) { drag.pos = null; return; }
+    if (!row) { drag.pos = null; clearGap(false); return; }
     row.classList.add('drop-hot');
     drag.pos = insertIndex(row, e.clientX, e.clientY);
-    showIns(row, drag.pos);
+    showGap(row, drag.pos);
   }
   function endDrag(commit) {
     var d = drag;
     drag = null;
     if (!d) return;
-    clearHot();
+    Array.prototype.forEach.call(document.querySelectorAll('.drop-hot'), function (e) { e.classList.remove('drop-hot'); });
+    if (d.gapEl && d.gapEl.parentNode) d.gapEl.parentNode.removeChild(d.gapEl);
     if (d.clone && d.clone.parentNode) d.clone.parentNode.removeChild(d.clone);
     if (d.el) d.el.classList.remove('dragging');
     if (!d.started) { if (commit) tapNode(d.node); return; }
@@ -755,6 +775,7 @@
   });
   $('tLabel').addEventListener('click', function () { st.labels = !st.labels; render(); save(); });
   $('tColor').addEventListener('click', function () { st.colors = !st.colors; render(); save(); });
+  $('tZh').addEventListener('click', function () { st.zh = !st.zh; render(); save(); });
   $('fPlus').addEventListener('click', function () { st.font = Math.min(1.8, Math.round((st.font + 0.1) * 10) / 10); render(); save(); });
   $('fMinus').addEventListener('click', function () { st.font = Math.max(0.7, Math.round((st.font - 0.1) * 10) / 10); render(); save(); });
   $('bPrev').addEventListener('click', function () { go(st.cur - 1); });
