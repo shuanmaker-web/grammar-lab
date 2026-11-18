@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#FBF6EA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Grammar Lab">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>Grammar Lab</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <button id="btnMenu" class="btn">選單</button>
+  <h1>Grammar Lab<small id="topicName"></small></h1>
+  <nav class="tabs" id="modeTabs">
+    <button class="tab" data-mode="compose">兩句合一句</button>
+    <button class="tab" data-mode="free">自由排列</button>
+  </nav>
+  <div class="tools">
+    <button id="tLabel" class="btn toggle on">標籤</button>
+    <button id="tColor" class="btn toggle on">顏色</button>
+    <button id="fMinus" class="btn" aria-label="縮小字級">A−</button>
+    <button id="fPlus" class="btn" aria-label="放大字級">A+</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside id="side" class="closed">
+    <div id="sideTopics" hidden></div>
+    <div id="sideItems">
+      <button id="sideBack" class="back"></button>
+      <div id="sideList"></div>
+    </div>
+    <div class="ver" id="ver"></div>
+  </aside>
+  <div id="scrim" hidden></div>
+
+  <main id="stage">
+    <div id="tip" class="tip"></div>
+    <section id="guide" class="guide"></section>
+    <section id="board" class="board">
+      <div id="rowsS"></div>
+      <div class="rowwrap" id="wrapA"><div class="rowlab" id="labA"></div><div id="rowA"></div></div>
+      <div class="rowwrap" id="wrapB"><div class="rowlab" id="labB"></div><div id="rowB"></div></div>
+    </section>
+    <section id="msg" class="msg"></section>
+    <div id="legend" class="legend"></div>
+    <footer class="actions">
+      <button id="bPrev" class="btn">上一句</button>
+      <button id="bShuffle" class="btn">打散</button>
+      <button id="bReset" class="btn">重設</button>
+      <button id="bNext" class="btn primary">下一句</button>
+    </footer>
+  </main>
+</div>
+<div id="ins" class="ins"></div>
+
+<script src="version.js"></script>
+<script src="data.js"></script>
+<script src="data-core.js"></script>
+<script src="data-basic.js"></script>
+<script src="data-verbs.js"></script>
+<script src="data-clauses.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
