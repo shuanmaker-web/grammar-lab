@@ -1,7 +1,7 @@
 importScripts('version.js');
 const CACHE = 'grammar-lab-' + self.APP_VERSION;
 const ASSETS = [
-  './', 'index.html', 'style.css', 'app.js', 'data.js', 'data-core.js', 'data-basic.js', 'data-verbs.js', 'data-clauses.js', 'version.js',
+  './', 'index.html', 'style.css', 'app.js', 'data.js', 'data-core.js', 'data-basic.js', 'data-verbs.js', 'data-clauses.js', 'data-compound.js', 'version.js',
   'manifest.json', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'
 ];
 
